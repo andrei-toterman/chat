@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub enum Message {
-    Join(String),
-    Say(String),
-    Leave,
+    Joined(Arc<String>),
+    Said(Arc<String>, Arc<String>),
+    Left(Arc<String>),
 }
 
 #[tokio::test]
@@ -13,9 +15,12 @@ async fn test_message_codec() {
     use futures::{SinkExt, StreamExt};
     use tokio_util::codec::{FramedRead, FramedWrite};
 
-    let message1_send = Message::Join("username".to_owned());
-    let message2_send = Message::Say("something".to_owned());
-    let message3_send = Message::Leave;
+    let message1_send = Message::Joined(Arc::new("username".to_owned()));
+    let message2_send = Message::Said(
+        Arc::new("username".to_owned()),
+        Arc::new("something".to_owned()),
+    );
+    let message3_send = Message::Left(Arc::new("username".to_string()));
 
     let buffer = Vec::new();
     let mut frame_writer = FramedWrite::new(buffer, BincodeCodec::new());
