@@ -1,6 +1,7 @@
 use std::{collections::HashSet, net::SocketAddr, sync::Arc};
 
 use futures::{SinkExt, StreamExt};
+use parse_display::Display;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::{
@@ -15,11 +16,15 @@ use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
 
 use crate::client;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+#[derive(Debug, Display, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub enum Message {
+    #[display("{0} has joined the chat")]
     Joined(Arc<String>),
+    #[display("{0}: {1}")]
     Said(Arc<String>, Arc<String>),
+    #[display("{0} has left the chat")]
     Left(Arc<String>),
+    #[display("{0}")]
     Err(Error),
 }
 
