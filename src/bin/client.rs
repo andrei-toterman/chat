@@ -16,8 +16,7 @@ use tui::{
 };
 use unicode_width::UnicodeWidthStr;
 
-use chat::client::Message;
-use chat::server;
+use chat::{client::Message, server};
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

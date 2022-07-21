@@ -43,6 +43,12 @@ pub struct State {
     sender: broadcast::Sender<Message>,
 }
 
+impl State {
+    fn broadcast(&self, message: Message) {
+        let _ = self.sender.send(message);
+    }
+}
+
 impl Default for State {
     fn default() -> Self {
         let (sender, _) = broadcast::channel(64);
@@ -50,12 +56,6 @@ impl Default for State {
             usernames: Default::default(),
             sender,
         }
-    }
-}
-
-impl State {
-    fn broadcast(&self, message: Message) {
-        let _ = self.sender.send(message);
     }
 }
 
@@ -74,20 +74,19 @@ pub async fn handle_client(
         SymmetricalBincode::default(),
     );
 
-    // loop label is here only because my IDE has a bug and it needs it
-    let username = 'username: loop {
+    let username = loop {
         match from_client.next().await {
             None => return Ok(()),
             Some(result) => match result {
                 Ok(client::Message::Join(username)) => {
                     let username = Arc::new(username);
                     if state.usernames.write().await.insert(username.clone()) {
-                        break 'username username;
+                        break username;
                     }
                     to_client.send(Message::Err(Error::UsernameTaken)).await?;
                 }
                 Err(error) => {
-                    eprintln!("client {} erred asking for username: {:?}", address, error);
+                    eprintln!("client {address} erred asking for username: {error:?}");
                     to_client.send(Message::Err(Error::Internal)).await?;
                 }
                 _ => {}
@@ -95,12 +94,10 @@ pub async fn handle_client(
         }
     };
 
-    // everything is in one big block so that i can run some additional code no matter how it ends
-    // bootleg defer
     let result: std::io::Result<()> = async {
         let mut receiver = state.sender.subscribe();
         state.broadcast(Message::Joined(username.clone()));
-        println!("client {} joined as {}", address, username);
+        println!("client {address} joined as {username}");
 
         loop {
             tokio::select! {
@@ -126,12 +123,12 @@ pub async fn handle_client(
                             client::Message::Say(what) => {
                                 let what = Arc::new(what);
                                 state.broadcast(Message::Said(username.clone(), what.clone()));
-                                println!("client {} aka {} said: {}", address, username, what);
+                                println!("client {address} aka {username} said: {what}");
                             }
                             _ => {}
                         },
                         Err(error) => {
-                            eprintln!("client {} erred asking for message: {:?}", address,  error);
+                            eprintln!("client {address} erred asking for message: {error:?}");
                             to_client.send(Message::Err(Error::Internal)).await?;
                         }
                     },
@@ -144,7 +141,7 @@ pub async fn handle_client(
 
     state.broadcast(Message::Left(username.clone()));
     state.usernames.write().await.remove(&username);
-    println!("client {} aka {} left", address, username);
+    println!("client {address} aka {username} left");
 
     result
 }

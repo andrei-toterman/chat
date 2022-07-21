@@ -15,8 +15,8 @@ async fn main() -> std::io::Result<()> {
         let state = state.clone();
         tokio::spawn(async move {
             match handle_client(state, stream, address).await {
-                Ok(_) => println!("client {} terminated successfully", address),
-                Err(err) => eprintln!("client {} failed: {:?}", address, err),
+                Ok(_) => println!("client {address} terminated successfully"),
+                Err(err) => eprintln!("client {address} failed: {err:?}"),
             }
         });
     }
