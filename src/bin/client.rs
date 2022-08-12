@@ -4,6 +4,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use futures::{SinkExt, StreamExt};
+use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio_serde::{formats::SymmetricalBincode, SymmetricallyFramed};
 use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
@@ -46,28 +47,10 @@ async fn main() -> std::io::Result<()> {
     // to_server.send(Message::Join(input.clone())).await?;
 
     loop {
-        // match from_server.next().await {
-        //     None => break,
-        //     Some(message_result) => chat.push(message_result?),
-        // }
-
-        match events.next().await {
-            None => break,
-            Some(event_result) => {
-                if let Event::Key(key) = event_result? {
-                    match key.code {
-                        KeyCode::Left => println!("bla"),
-                        KeyCode::Right => println!("aaa"),
-                        _ => {}
-                    }
-                }
-            }
-        }
-
         terminal
             .draw(|frame| {
                 let chunks = Layout::default()
-                    .constraints([Constraint::Min(1), Constraint::Length(1)])
+                    .constraints([Constraint::Percentage(80), Constraint::Percentage(20)])
                     .split(frame.size());
 
                 frame.render_widget(
@@ -90,7 +73,36 @@ async fn main() -> std::io::Result<()> {
                 frame.set_cursor(chunks[1].x + input.width() as u16 + 1, chunks[1].y + 1);
             })
             .expect("failed to draw");
+
+        // match from_server.next().await {
+        //     None => break,
+        //     Some(message_result) => chat.push(message_result?),
+        // }
+
+        match events.next().await {
+            None => break,
+            Some(event_result) => {
+                if let Event::Key(key) = event_result? {
+                    match key.code {
+                        KeyCode::Char(c) => input.push(c),
+                        KeyCode::Backspace => {
+                            input.pop();
+                        }
+                        KeyCode::Enter => {
+                            chat.push(server::Message::Said(
+                                Arc::new("aaaa".into()),
+                                Arc::new(input.clone()),
+                            ));
+                            input.clear();
+                        }
+                        KeyCode::Esc => break,
+                        _ => {}
+                    }
+                }
+            }
+        }
     }
 
+    terminal::disable_raw_mode()?;
     Ok(())
 }
