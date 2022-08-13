@@ -56,7 +56,8 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "bytes",
- "crossterm 0.25.0",
+ "crossterm",
+ "defer",
  "futures",
  "parse-display",
  "serde",
@@ -65,6 +66,7 @@ dependencies = [
  "tokio-serde",
  "tokio-util",
  "tui",
+ "tui-input",
  "unicode-width",
 ]
 
@@ -73,22 +75,6 @@ name = "crossterm"
 version = "0.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2102ea4f781910f8a5b98dd061f4c2023f479ce7bb1236330099ceb5a93cf17"
-dependencies = [
- "bitflags",
- "crossterm_winapi",
- "libc",
- "mio",
- "parking_lot",
- "signal-hook",
- "signal-hook-mio",
- "winapi",
-]
-
-[[package]]
-name = "crossterm"
-version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e64e6c0fbe2c17357405f7c758c1ef960fce08bdfb2c03d88d2a18d7e09c4b67"
 dependencies = [
  "bitflags",
  "crossterm_winapi",
@@ -109,6 +95,12 @@ checksum = "2ae1b35a484aa10e07fe0638d02301c5ad24de82d310ccbd2f3693da5f09bf1c"
 dependencies = [
  "winapi",
 ]
+
+[[package]]
+name = "defer"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "647605a6345d5e89c3950a36a638c56478af9b414c55c6f2477c73b115f9acde"
 
 [[package]]
 name = "educe"
@@ -691,9 +683,18 @@ checksum = "96fe69244ec2af261bced1d9046a6fee6c8c2a6b0228e59e5ba39bc8ba4ed729"
 dependencies = [
  "bitflags",
  "cassowary",
- "crossterm 0.23.2",
+ "crossterm",
  "unicode-segmentation",
  "unicode-width",
+]
+
+[[package]]
+name = "tui-input"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7b243fc45f29d5de2116c6bdf05b3ba2f0aec9e14b0508f9866ad004bffa3f8"
+dependencies = [
+ "crossterm",
 ]
 
 [[package]]

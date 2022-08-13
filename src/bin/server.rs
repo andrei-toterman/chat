@@ -12,6 +12,7 @@ async fn main() -> std::io::Result<()> {
 
     loop {
         let (stream, address) = listener.accept().await?;
+        println!("client {address} has connected");
         let state = state.clone();
         tokio::spawn(async move {
             match handle_client(state, stream, address).await {

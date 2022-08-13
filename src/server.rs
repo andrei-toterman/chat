@@ -101,7 +101,7 @@ pub async fn handle_client(
 
         loop {
             tokio::select! {
-                result = receiver.recv() => match result {
+                server_event = receiver.recv() => match server_event {
                     Ok(message) => {
                         if matches!(
                             message,
@@ -115,7 +115,7 @@ pub async fn handle_client(
                     }
                     _ => {}
                 },
-                option = from_client.next() => match option {
+                client_event = from_client.next() => match client_event {
                     None => break,
                     Some(result) => match result {
                         Ok(message) => match message {
