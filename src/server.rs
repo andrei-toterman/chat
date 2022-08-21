@@ -77,20 +77,18 @@ pub async fn handle_client(
     let username = loop {
         match from_client.next().await {
             None => return Ok(()),
-            Some(result) => match result {
-                Ok(client::Message::Join(username)) => {
-                    let username = Arc::new(username);
-                    if state.usernames.write().await.insert(username.clone()) {
-                        break username;
-                    }
-                    to_client.send(Message::Err(Error::UsernameTaken)).await?;
+            Some(Ok(client::Message::Join(username))) => {
+                let username = Arc::new(username);
+                if state.usernames.write().await.insert(username.clone()) {
+                    break username;
                 }
-                Err(error) => {
-                    eprintln!("client {address} erred asking for username: {error:?}");
-                    to_client.send(Message::Err(Error::Internal)).await?;
-                }
-                _ => {}
-            },
+                to_client.send(Message::Err(Error::UsernameTaken)).await?;
+            }
+            Some(Err(error)) => {
+                eprintln!("client {address} erred asking for username: {error:?}");
+                to_client.send(Message::Err(Error::Internal)).await?;
+            }
+            _ => {}
         }
     };
 
@@ -102,13 +100,8 @@ pub async fn handle_client(
         loop {
             tokio::select! {
                 server_event = receiver.recv() => match server_event {
-                    Ok(message) => {
-                        if matches!(
-                            message,
-                            Message::Said(_, _) | Message::Joined(_) | Message::Left(_)
-                        ) {
-                            to_client.send(message).await?;
-                        }
+                    Ok(message @ (Message::Said(_, _) | Message::Joined(_) | Message::Left(_))) => {
+                        to_client.send(message).await?
                     }
                     Err(RecvError::Lagged(lost)) => {
                         to_client.send(Message::Err(Error::Lost(lost))).await?;
@@ -117,22 +110,17 @@ pub async fn handle_client(
                 },
                 client_event = from_client.next() => match client_event {
                     None => break,
-                    Some(result) => match result {
-                        Ok(message) => match message {
-                            client::Message::Leave => break,
-                            client::Message::Say(what) => {
-                                let what = Arc::new(what);
-                                state.broadcast(Message::Said(username.clone(), what.clone()));
-                                println!("client {address} aka {username} said: {what}");
-                            }
-                            _ => {}
-                        },
-                        Err(error) => {
-                            eprintln!("client {address} erred asking for message: {error:?}");
-                            to_client.send(Message::Err(Error::Internal)).await?;
-                        }
+                    Some(Ok(client::Message::Say(what))) => {
+                        let what = Arc::new(what);
+                        state.broadcast(Message::Said(username.clone(), what.clone()));
+                        println!("client {address} aka {username} said: {what}");
                     },
-                }
+                    Some(Err(error))=> {
+                        eprintln!("client {address} erred asking for message: {error:?}");
+                        to_client.send(Message::Err(Error::Internal)).await?;
+                    }
+                    _ => {}
+                },
             }
         }
         Ok(())

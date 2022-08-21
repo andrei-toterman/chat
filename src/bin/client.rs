@@ -91,7 +91,6 @@ async fn main() -> std::io::Result<()> {
 
     terminal::disable_raw_mode()?;
     terminal.backend_mut().execute(LeaveAlternateScreen)?;
-    to_server.send(Message::Leave).await?;
 
     Ok(())
 }
