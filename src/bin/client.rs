@@ -103,14 +103,17 @@ fn draw<B: Backend>(f: &mut Frame<B>, state: &State) {
             Constraint::Length(1),
         ])
         .split(f.size());
-    let width = chunks[2].width.max(3) - 3;
 
+    let scroll_messages = state
+        .chat
+        .len()
+        .saturating_sub(chunks[0].height as usize - 2);
     f.render_widget(
         List::new(
             state
                 .chat
                 .iter()
-                .skip(state.chat.len().saturating_sub(chunks[0].height as usize))
+                .skip(scroll_messages)
                 .map(|m| ListItem::new(m.to_string()))
                 .collect::<Vec<_>>(),
         )
@@ -118,14 +121,14 @@ fn draw<B: Backend>(f: &mut Frame<B>, state: &State) {
         chunks[0],
     );
 
+    let width = chunks[2].width.saturating_sub(3);
     f.render_widget(
         Paragraph::new(state.input.value())
             .block(Block::default().borders(Borders::ALL).title("Input"))
-            .scroll((0, (state.input.cursor() as u16).max(width) - width))
+            .scroll((0, (state.input.cursor() as u16).saturating_sub(width)))
             .style(Style::default().fg(Color::Yellow)),
         chunks[1],
     );
-
     f.set_cursor(
         chunks[1].x + (state.input.cursor() as u16).min(width) + 1,
         chunks[1].y + 1,
@@ -133,11 +136,11 @@ fn draw<B: Backend>(f: &mut Frame<B>, state: &State) {
 
     f.render_widget(
         Paragraph::new(Spans::from(vec![
-            Span::raw("Press "),
-            Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw(" to exit, "),
-            Span::styled("Tab", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw(" to start editing."),
+            Span::raw("Press"),
+            Span::styled(" Esc ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::raw("to exit,"),
+            Span::styled(" Tab ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::raw("to toggle between writing and scrolling"),
         ])),
         chunks[2],
     );
